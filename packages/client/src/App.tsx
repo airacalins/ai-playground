@@ -12,7 +12,7 @@ function App() {
       .catch((error) => console.error("Error fetching message:", error));
   }, []);
 
-  return <p>{message && <p>{message}</p>}</p>;
+  return <p className="font-bold">{message && <p>{message}</p>}</p>;
 }
 
 export default App;
