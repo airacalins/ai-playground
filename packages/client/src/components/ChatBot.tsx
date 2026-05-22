@@ -3,6 +3,7 @@ import { FaArrowUp } from 'react-icons/fa';
 import { Button } from './ui/button';
 import axios from 'axios';
 import { useState } from 'react';
+import ReactMarkdown from 'react-markdown';
 
 type FormData = {
   prompt: string;
@@ -56,7 +57,7 @@ const ChatBot = () => {
             key={index}
             className={`px-4 py2 rounded-xl ${message.role === 'user' ? 'bg-blue-600 text-white self-end' : 'bg-gray-100 text-black'}`}
           >
-            {message.content}
+            <ReactMarkdown>{message.content}</ReactMarkdown>
           </p>
         ))}
       </div>
