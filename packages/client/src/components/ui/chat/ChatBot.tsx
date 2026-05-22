@@ -2,9 +2,9 @@ import { useForm } from 'react-hook-form';
 import { FaArrowUp } from 'react-icons/fa';
 import { Button } from '../button';
 import axios from 'axios';
-import { useEffect, useRef, useState } from 'react';
-import ReactMarkdown from 'react-markdown';
+import { useState } from 'react';
 import TypingIndicator from './TypingIndicator';
+import ChatMessages from './ChatMessages';
 
 type FormData = {
   prompt: string;
@@ -14,7 +14,7 @@ type ChatResponse = {
   message: string;
 };
 
-type Message = {
+export type Message = {
   content: string;
   role: 'user' | 'bot';
 };
@@ -23,13 +23,6 @@ const ChatBot = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [error, setError] = useState('');
   const [isBotTyping, setIsBotTyping] = useState(false);
-  const lastMessageRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    lastMessageRef.current?.scrollIntoView({
-      behavior: 'smooth',
-    });
-  }, [messages]);
 
   const {
     register,
@@ -69,28 +62,10 @@ const ChatBot = () => {
     }
   };
 
-  const onCopyMessage = (e: React.ClipboardEvent) => {
-    const selection = window.getSelection()?.toString().trim();
-
-    if (selection) {
-      e.preventDefault();
-      e.clipboardData.setData('text/plain', selection);
-    }
-  };
-
   return (
     <div className="flex flex-col h-full">
       <div className="flex flex-col flex-1 gap-4 mb-8 overflow-y-auto">
-        {messages.map((message, index) => (
-          <div
-            key={index}
-            onCopy={onCopyMessage}
-            ref={index === messages.length - 1 ? lastMessageRef : null}
-            className={`px-4 py2 rounded-xl ${message.role === 'user' ? 'bg-blue-600 text-white self-end' : 'bg-gray-100 text-black'}`}
-          >
-            <ReactMarkdown>{message.content}</ReactMarkdown>
-          </div>
-        ))}
+        <ChatMessages messages={messages} />
         {isBotTyping && <TypingIndicator />}
         {error && <p className="text-red-500">{error}</p>}
       </div>
