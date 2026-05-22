@@ -1,17 +1,11 @@
-import { useForm } from 'react-hook-form';
-import { FaArrowUp } from 'react-icons/fa';
-import { Button } from '../button';
 import axios from 'axios';
 import { useState } from 'react';
 import TypingIndicator from './TypingIndicator';
 import ChatMessages from './ChatMessages';
+import ChatInput from './ChatInput';
 
-type FormData = {
+export type ChatFormData = {
   prompt: string;
-};
-
-type ChatResponse = {
-  message: string;
 };
 
 export type Message = {
@@ -19,27 +13,20 @@ export type Message = {
   role: 'user' | 'bot';
 };
 
+type ChatResponse = {
+  message: string;
+};
+
 const ChatBot = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [error, setError] = useState('');
   const [isBotTyping, setIsBotTyping] = useState(false);
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { isValid },
-  } = useForm<FormData>();
-
-  const onSubmit = async ({ prompt }: FormData) => {
+  const onSubmit = async ({ prompt }: ChatFormData) => {
     try {
       setMessages((prev) => [...prev, { content: prompt, role: 'user' }]);
       setIsBotTyping(true);
       setError('');
-
-      reset({
-        prompt: '',
-      });
 
       const { data } = await axios.post<ChatResponse>('/api/chat', {
         prompt,
@@ -55,39 +42,15 @@ const ChatBot = () => {
     }
   };
 
-  const onKeyDown = (e: React.KeyboardEvent<HTMLFormElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSubmit(onSubmit)();
-    }
-  };
-
   return (
     <div className="flex flex-col h-full">
+      <p className="font-bold text-mist-700">AI Playground</p>
       <div className="flex flex-col flex-1 gap-4 mb-8 overflow-y-auto">
         <ChatMessages messages={messages} />
         {isBotTyping && <TypingIndicator />}
         {error && <p className="text-red-500">{error}</p>}
       </div>
-      <form
-        onSubmit={handleSubmit(onSubmit)}
-        onKeyDown={onKeyDown}
-        className="flex flex-col gap-2 items-end border-2 p-4 rounded-3xl"
-      >
-        <textarea
-          {...register('prompt', {
-            required: true,
-            validate: (data) => data.trim().length > 0,
-          })}
-          autoFocus
-          className="w-full focus:outline-0 resize-none"
-          placeholder="Ask anything"
-          maxLength={1000}
-        />
-        <Button disabled={!isValid} className="rounded-full w-9 h-9">
-          <FaArrowUp />
-        </Button>
-      </form>
+      <ChatInput onSubmit={onSubmit} isBotTyping={isBotTyping} />
     </div>
   );
 };
