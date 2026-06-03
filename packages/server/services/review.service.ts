@@ -1,6 +1,7 @@
 import type { Review } from '@prisma/client';
 import { reviewRepository } from '../repositories/review.repository';
 import { llmClient } from '../llm/client';
+import template from '../prompts/summarize-reviews.txt';
 
 export const reviewService = {
   async getReviews(productId: number): Promise<Review[]> {
@@ -12,12 +13,7 @@ export const reviewService = {
 
     const joinedReviews = reviews.map((r) => r.content).join('\n\n');
 
-    const prompt = `
-      Summarize the following reviews into a short paragraph without cutting mid sentence highlighting key themes, both positive and negative:
-
-      ${joinedReviews}
-
-    `;
+    const prompt = template.replace('{{reviews}}', joinedReviews);
 
     const response = await llmClient.generateText({
       model: 'gpt-4o-mini',
