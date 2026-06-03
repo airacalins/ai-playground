@@ -22,4 +22,22 @@ export const reviewController = {
       res.status(500).json(error);
     }
   },
+
+  async summarizeReviews(req: Request, res: Response) {
+    const productId = Number(req.params.id);
+
+    try {
+      if (isNaN(productId)) {
+        res.status(400).json({
+          error: 'Invalid product ID',
+        });
+
+        return;
+      }
+
+      const summary = await reviewService.summarizeReviews(productId);
+
+      res.json({ summary });
+    } catch (error) {}
+  },
 };
