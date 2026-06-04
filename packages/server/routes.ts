@@ -4,6 +4,7 @@ import { chatController } from './controllers/chat.controller';
 import 'dotenv/config';
 import { prisma } from './lib/prisma';
 import { reviewController } from './controllers/review.controller';
+import { summaryController } from './controllers/summary.controller';
 
 const router = express.Router();
 
@@ -21,9 +22,8 @@ router.post('/api/chat', chatController.sendMessage);
 
 router.get('/api/products/:id/reviews', reviewController.getReviews);
 
-router.post(
-  '/api/products/:id/reviews/summarize',
-  reviewController.summarizeReviews
-);
+router.get('/api/products/:id/summary', summaryController.getSummary);
+
+router.post('/api/products/:id/summary', summaryController.getSummary);
 
 export default router;
