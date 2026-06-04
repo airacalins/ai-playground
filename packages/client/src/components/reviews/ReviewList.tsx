@@ -1,7 +1,9 @@
 import axios from 'axios';
-import StarRating from './StarRating';
 import Skeleton from 'react-loading-skeleton';
 import { useQuery } from '@tanstack/react-query';
+import { Button } from '../ui/button';
+import { HiSparkles } from 'react-icons/hi2';
+import StarRating from './StarRating';
 
 type Props = {
   productId: number;
@@ -16,6 +18,10 @@ type Review = {
   productId: number;
 };
 
+type Summary = {
+  content: string;
+};
+
 const ReviewList = ({ productId }: Props) => {
   const fetchReviews = async () => {
     const { data } = await axios.get<Review[]>(
@@ -24,16 +30,34 @@ const ReviewList = ({ productId }: Props) => {
     return data;
   };
 
+  const fetchSummary = async () => {
+    const { data } = await axios.get<Summary>(
+      `/api/products/${productId}/summary`
+    );
+    return data;
+  };
+
   const {
-    isLoading,
+    isLoading: isLoadingReviews,
     data: reviewData,
-    error,
+    isError: isErrorReviews,
   } = useQuery<Review[]>({
     queryKey: ['reviews', productId],
-    queryFn: () => fetchReviews(),
+    queryFn: fetchReviews,
   });
 
-  if (isLoading)
+  const {
+    isLoading: isLoadingSummary,
+    data: summaryData,
+    isError: isErrorSummary,
+  } = useQuery<Summary>({
+    queryKey: ['summary', productId],
+    queryFn: fetchSummary,
+  });
+
+  console.log(JSON.stringify(summaryData, null, 2));
+
+  if (isLoadingSummary || isLoadingReviews)
     return (
       <div className="flex flex-col gap-5">
         {[1, 2, 3].map((i) => (
@@ -46,24 +70,31 @@ const ReviewList = ({ productId }: Props) => {
       </div>
     );
 
-  if (error) {
+  if (isErrorSummary || isErrorReviews)
     return <p className="text-red-500">Could not fetch reviews. Try again!</p>;
-  }
+
+  if (!reviewData.length) return null;
 
   return (
-    <div>
-      <p className="font-bold text-mist-700">Reviews</p>
+    <div className="flex flex-col gap-4">
+      {summaryData?.content ? (
+        <div className=" text-gray-700">{summaryData.content}</div>
+      ) : (
+        <Button className="w-fit">
+          <HiSparkles /> Summarize
+        </Button>
+      )}
 
-      <div className="flex flex-col gap-4">
-        {reviewData.map((review) => (
-          <div key={review.id}>
-            <div className="font-semibold">{review.author}</div>
-            <div>
+      <div>
+        <div className="flex flex-col gap-4">
+          {reviewData?.map((review) => (
+            <div key={review.id}>
+              <div className="font-semibold">{review.author}</div>
               <StarRating value={review.rating} />
+              <p className="py-2">{review.content}</p>
             </div>
-            <p className="py-2">{review.content}</p>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   );

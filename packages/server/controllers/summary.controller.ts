@@ -9,9 +9,7 @@ export const summaryController = {
       const summary = await summaryService.getSummary(productId);
 
       if (!summary) {
-        res.status(404).json({
-          error: 'No summary generated yet.',
-        });
+        res.json(null);
       }
 
       res.json(summary);
