@@ -19,6 +19,7 @@ type Review = {
 const ReviewList = ({ productId }: Props) => {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     const loadReviews = async () => {
@@ -29,6 +30,9 @@ const ReviewList = ({ productId }: Props) => {
         );
 
         setReviews(data);
+      } catch (error) {
+        console.error(error);
+        setError('Could not fetch the reviews. Try again.');
       } finally {
         setIsLoading(false);
       }
@@ -49,6 +53,10 @@ const ReviewList = ({ productId }: Props) => {
         ))}
       </div>
     );
+
+  if (error) {
+    return <p className="text-red-500">{error}</p>;
+  }
 
   return (
     <div>
