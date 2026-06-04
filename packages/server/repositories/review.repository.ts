@@ -1,5 +1,6 @@
 import type { Review } from '@prisma/client';
 import { prisma } from '../lib/prisma';
+import dayjs from 'dayjs';
 
 export const reviewRepository = {
   async getReviews(productId: number, limit?: number): Promise<Review[]> {
@@ -11,6 +12,25 @@ export const reviewRepository = {
         createdAt: 'desc',
       },
       take: limit,
+    });
+  },
+
+  async storeReviewSummary(productId: number, summary: string) {
+    const now = new Date();
+    const expiresAt = dayjs().add(7, 'days').toDate();
+    const data = {
+      content: summary,
+      expiresAt,
+      generatedAt: now,
+      productId,
+    };
+
+    return prisma.summary.upsert({
+      where: {
+        productId,
+      },
+      create: data,
+      update: data,
     });
   },
 };
