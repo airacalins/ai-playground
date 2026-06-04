@@ -18,12 +18,17 @@ router.get('/api/hello', (req: Request, res: Response) => {
   res.json({ message: 'Hello from the API!' });
 });
 
+// Chat
 router.post('/api/chat', chatController.sendMessage);
 
+// Reviews
 router.get('/api/products/:id/reviews', reviewController.getReviews);
+router.post(
+  '/api/products/:id/reviews/summarize',
+  reviewController.summarizeReviews
+);
 
+// Summary
 router.get('/api/products/:id/summary', summaryController.getSummary);
-
-router.post('/api/products/:id/summary', summaryController.getSummary);
 
 export default router;
