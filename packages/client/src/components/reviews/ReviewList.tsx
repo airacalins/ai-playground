@@ -1,9 +1,9 @@
 import axios from 'axios';
-import Skeleton from 'react-loading-skeleton';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { Button } from '../ui/button';
 import { HiSparkles } from 'react-icons/hi2';
 import StarRating from './StarRating';
+import ReviewSkeleton from './ReviewSkeleton';
 
 type Props = {
   productId: number;
@@ -22,7 +22,18 @@ type Summary = {
   content: string;
 };
 
+type SummarizeResponse = {
+  summary: string;
+};
+
 const ReviewList = ({ productId }: Props) => {
+  const summarizeReviews = async () => {
+    const { data } = await axios.post<SummarizeResponse>(
+      `/api/products/${productId}/reviews/summarize`
+    );
+    return data;
+  };
+
   const fetchReviews = async () => {
     const { data } = await axios.get<Review[]>(
       `/api/products/${productId}/reviews`
@@ -36,6 +47,15 @@ const ReviewList = ({ productId }: Props) => {
     );
     return data;
   };
+
+  const {
+    mutate: handleSummarize,
+    isPending: isSummaryLoading,
+    isError: isSummaryError,
+    data: summarizeResponse,
+  } = useMutation<SummarizeResponse>({
+    mutationFn: () => summarizeReviews(),
+  });
 
   const {
     isLoading: isLoadingReviews,
@@ -55,17 +75,11 @@ const ReviewList = ({ productId }: Props) => {
     queryFn: fetchSummary,
   });
 
-  console.log(JSON.stringify(summaryData, null, 2));
-
   if (isLoadingSummary || isLoadingReviews)
     return (
       <div className="flex flex-col gap-5">
         {[1, 2, 3].map((i) => (
-          <div key={i}>
-            <Skeleton width={150} />
-            <Skeleton width={100} />
-            <Skeleton count={2} />
-          </div>
+          <ReviewSkeleton key={i} />
         ))}
       </div>
     );
@@ -75,16 +89,31 @@ const ReviewList = ({ productId }: Props) => {
 
   if (!reviewData.length) return null;
 
+  const currentSummary = summaryData?.content ?? summarizeResponse?.summary;
+
   return (
     <div className="flex flex-col gap-4">
-      {summaryData?.content ? (
-        <div className=" text-gray-700">{summaryData.content}</div>
+      {currentSummary ? (
+        <div className=" text-gray-700">{currentSummary}</div>
       ) : (
-        <Button className="w-fit">
-          <HiSparkles /> Summarize
-        </Button>
+        <>
+          {!isSummaryLoading ? (
+            <Button
+              onClick={() => handleSummarize()}
+              className="w-fit cursor-pointer"
+            >
+              <HiSparkles /> Summarize
+            </Button>
+          ) : (
+            <ReviewSkeleton />
+          )}
+          {isSummaryError && (
+            <p className="text-red-500">
+              Could not summarize reviews. Try again!
+            </p>
+          )}
+        </>
       )}
-
       <div>
         <div className="flex flex-col gap-4">
           {reviewData?.map((review) => (
