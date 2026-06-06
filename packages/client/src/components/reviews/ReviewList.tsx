@@ -1,81 +1,35 @@
-import axios from 'axios';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Button } from '../ui/button';
 import { HiSparkles } from 'react-icons/hi2';
 import StarRating from './StarRating';
 import ReviewSkeleton from './ReviewSkeleton';
+import {
+  reviewsApi,
+  type Review,
+  type SummarizeResponse,
+} from '@/api/review.api';
+import { summaryApi, type Summary } from '@/api/summary.api';
 
 type Props = {
   productId: number;
 };
 
-type Review = {
-  id: number;
-  author: string;
-  content: string;
-  rating: number;
-  createdAt: string;
-  productId: number;
-};
-
-type Summary = {
-  content: string;
-};
-
-type SummarizeResponse = {
-  summary: string;
-};
-
 const ReviewList = ({ productId }: Props) => {
-  const summarizeReviews = async () => {
-    const { data } = await axios.post<SummarizeResponse>(
-      `/api/products/${productId}/reviews/summarize`
-    );
-    return data;
-  };
-
-  const fetchReviews = async () => {
-    const { data } = await axios.get<Review[]>(
-      `/api/products/${productId}/reviews`
-    );
-    return data;
-  };
-
-  const fetchSummary = async () => {
-    const { data } = await axios.get<Summary>(
-      `/api/products/${productId}/summary`
-    );
-    return data;
-  };
-
-  const {
-    mutate: handleSummarize,
-    isPending: isSummaryLoading,
-    isError: isSummaryError,
-    data: summarizeResponse,
-  } = useMutation<SummarizeResponse>({
-    mutationFn: () => summarizeReviews(),
+  const summaryMutation = useMutation<SummarizeResponse>({
+    mutationFn: () => reviewsApi.summarizeReviews(productId),
   });
 
-  const {
-    isLoading: isLoadingReviews,
-    data: reviewData,
-    isError: isErrorReviews,
-  } = useQuery<Review[]>({
+  const reviewsQuery = useQuery<Review[]>({
     queryKey: ['reviews', productId],
-    queryFn: fetchReviews,
+    queryFn: () => reviewsApi.fetchReviews(productId),
   });
 
-  const {
-    isLoading: isLoadingSummary,
-    data: summaryData,
-    isError: isErrorSummary,
-  } = useQuery<Summary>({
+  const summaryQuery = useQuery<Summary>({
     queryKey: ['summary', productId],
-    queryFn: fetchSummary,
+    queryFn: () => summaryApi.fetchSummary(productId),
   });
 
-  if (isLoadingSummary || isLoadingReviews)
+  if (summaryQuery.isLoading || reviewsQuery.isLoading)
     return (
       <div className="flex flex-col gap-5">
         {[1, 2, 3].map((i) => (
@@ -84,12 +38,13 @@ const ReviewList = ({ productId }: Props) => {
       </div>
     );
 
-  if (isErrorSummary || isErrorReviews)
+  if (summaryQuery.isError || reviewsQuery.isError)
     return <p className="text-red-500">Could not fetch reviews. Try again!</p>;
 
-  if (!reviewData.length) return null;
+  if (!reviewsQuery.data?.length) return null;
 
-  const currentSummary = summaryData?.content ?? summarizeResponse?.summary;
+  const currentSummary =
+    summaryQuery.data?.content ?? summaryMutation.data?.summary;
 
   return (
     <div className="flex flex-col gap-4">
@@ -97,17 +52,18 @@ const ReviewList = ({ productId }: Props) => {
         <div className=" text-gray-700">{currentSummary}</div>
       ) : (
         <>
-          {!isSummaryLoading ? (
+          {!summaryMutation.isPending ? (
             <Button
-              onClick={() => handleSummarize()}
+              onClick={() => summaryMutation.mutate()}
               className="w-fit cursor-pointer"
+              disabled={summaryMutation.isPending}
             >
               <HiSparkles /> Summarize
             </Button>
           ) : (
             <ReviewSkeleton />
           )}
-          {isSummaryError && (
+          {summaryMutation.isError && (
             <p className="text-red-500">
               Could not summarize reviews. Try again!
             </p>
@@ -116,7 +72,7 @@ const ReviewList = ({ productId }: Props) => {
       )}
       <div>
         <div className="flex flex-col gap-4">
-          {reviewData?.map((review) => (
+          {reviewsQuery.data?.map((review) => (
             <div key={review.id}>
               <div className="font-semibold">{review.author}</div>
               <StarRating value={review.rating} />
